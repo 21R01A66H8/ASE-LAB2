@@ -46,14 +46,14 @@ void SIU_Init(void){
 	/* Setup CAN controller pins */
 
 	/* TX - transmitting */
-	SIU.PCR[16u].B.PA = 0x01u;		// HC - task 2
-	SIU.PCR[16u].B.OBE = 0x01u;		// HC - task 2
-	SIU.PCR[16u].B.IBE = 0x00u;		// HC - task 2
+	SIU.PCR[PCR_CAN_TX].B.PA = 1;
+	SIU.PCR[PCR_CAN_TX].B.OBE = 1;
+	SIU.PCR[PCR_CAN_TX].B.IBE = 0;
 
 	/* RX - receiving */
-	SIU.PCR[17u].B.PA = 0x01u;		// HC - task 1
-	SIU.PCR[17u].B.OBE = 0x00u;		// HC - task 1
-	SIU.PCR[17u].B.IBE = 0x01u;		// HC - task 1
+	SIU.PCR[PCR_CAN_RX].B.PA = 1;
+	SIU.PCR[PCR_CAN_RX].B.OBE = 0;
+	SIU.PCR[PCR_CAN_RX].B.IBE = 1;
 
 	SIU.PSMI[0].B.PADSEL = 0x1;
 	SIU.PSMI[33].B.PADSEL = 0x1;

@@ -16,7 +16,8 @@
 /* PCR number definitions */
 
 /* TO-DO: your task implementations */
-
+#define PCR_CAN_RX       17
+#define PCR_CAN_TX       16
 
 #define	PCR_LED_P		56		/* PD8 */
 #define	PCR_LED_Rx		57		/* PD9 */

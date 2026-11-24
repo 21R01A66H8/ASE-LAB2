@@ -9,69 +9,72 @@
 /* Includes ******************************************************************/
 #include "init.h"
 
-
 /* Global variables **********************************************************/
-int speed = 0u;
-int rpm = 8000u;
-int rpm_dir = -1;
-int pot_val = 0u;
-int light_val = 0u;
+int speed = 0;
+volatile int rpm = 0;
+volatile int rpm_step = -250;
+volatile bool engine_running = false;
+volatile bool blink_on = false;
 
-void can_send_engine_on(void){
+void can_send_engine_on(void)
+{
 
 	/* TO-DO: your task implementations **************************************/
 
-    // set payload bytes, if necessary
-	// CAN_0.BUF[10u].DATA.B[0u] = 0x11u;			// HC - task 2
-	// CAN_0.BUF[10u].DATA.B[1u] = 0x12u;			// HC - task 2
-	// CAN_0.BUF[10u].MSG_CS.B.LENGTH = 0x02u;		// HC - task 2
+	// set payload bytes, if necessary
+	// CAN_0.BUF[...].DATA.B[...] = ...;
 
 	// write the correct CODE value to this register to instruct the CAN controller to transmit the CAN message
-	CAN_0.BUF[10u].CS.B.CODE = 0x0Cu;				// HC - task 2, 3
-	
+	CAN_0.BUF[8].CS.B.CODE = 0xCU;
+	LED_Tx = !LED_Tx;
 }
 
-void can_send_speed(int value){
+void can_send_speed(int value)
+{
 	/* TO-DO: your task implementations **************************************/
-	speed = (240 * value) / (4095);					// HC - task 3
-
-	CAN_0.BUF[11u].DATA.B[0u] = speed;				// HC - task 3
-
-	CAN_0.BUF[11u].CS.B.CODE = 0x0Cu;				// HC - task 3
-
+	CAN_0.BUF[9].DATA.B[0] = value;
+	CAN_0.BUF[9].CS.B.CODE = 0xCU;
 }
 
-void can_send_rpm(){
+void can_send_rpm(int value)
+{
 	/* TO-DO: your task implementations **************************************/
-
-	CAN_0.BUF[12u].DATA.B[0u] = (rpm & 0xFFu);
-
-	CAN_0.BUF[12u].DATA.B[1u] = ((rpm >> 8) & 0xFFu);
-
-	CAN_0.BUF[12u].CS.B.CODE = 0x0Cu;
-
+	CAN_0.BUF[10].DATA.B[0] = value & 0xFF;
+	CAN_0.BUF[10].DATA.B[1] = (value >> 8) & 0xFF;
+	CAN_0.BUF[10].CS.B.CODE = 0xCU;
 }
 
-void can_send_lights(void){
-	/* TO-DO: your task implementations **************************************/
+void can_send_lights(void)
+{
+	uint8_t lights = 0;
+	if (blink_on)
+	{
 
-	CAN_0.BUF[13u].DATA.B[0u] = light_val;
+		if (SW2)
+		{
+			lights = lights | 0x01; /* Left indicator */
+		}
 
-	CAN_0.BUF[13u].CS.B.CODE = 0x0Cu;
+		if (SW1)
+		{
+			lights = lights | 0x02; /* Right indicator */
+		}
+	}
 
+	LED_U1 = (lights & 0x01) != 0;
+	LED_U3 = (lights & 0x02) != 0;
+	/* Both switches have now been checked. */
+	CAN_0.BUF[11].DATA.B[0] = lights;
+	CAN_0.BUF[11].CS.B.CODE = 0xCU;
 }
 
-void can_send(void){
+void can_send(void)
+{
 
 	/* TO-DO: your task implementations **************************************/
-
-	pot_val = POT;
-	LED_Rx = 0x00u;
-	// LED_U1 = 0x00u;
 
 	/*************************************************************************/
 }
-
 
 /*
  * @brief	Main program
@@ -79,25 +82,22 @@ void can_send(void){
  * @param	void
  * @retval	int
  */
-int main(void) {
+int main(void)
+{
 	/* peripherals initialization */
 	peripheralsInit();
-
-
 
 	/* TO-DO: your task implementations **************************************/
 
 	/* Configure and start timer channels */
 	/* PIT timer channel 1, period = 1000 ms */
-	PIT_ConfigureTimer(1u, 100u);	// HC - task 2
-	PIT_ConfigureTimer(2u, 1000u);
-	PIT_ConfigureTimer(3u, 500u);
-	// PIT_StartTimer(1u);				// HC - task 2
+	PIT_ConfigureTimer(2, 100); /* Channel 2, period 100 ms */
+	PIT_StartTimer(2);			/* Enable the timer */
 	/*************************************************************************/
 
-
 	/* main program */
-	while(1){
+	while (1)
+	{
 		/* System function */
 		systemFunction();
 
@@ -112,7 +112,6 @@ int main(void) {
 	}
 }
 
-
 /*
  * @brief	CAN receive interrupt
  *
@@ -120,36 +119,47 @@ int main(void) {
  * @param	CANRxFrame	crfp	The message which was received
  * @retval	void
  */
-void can_receive(CANRxFrame crfp) {
-    if(crfp.IDE == CAN_IDE_STD) // a standard message frame has been received
-    {
-        /* TO-DO: your task implementations ******************************/
-		LED_Rx = 0x01u;	// HC - task 1
-        if (crfp.SID == 0x11u) // check the Message ID	// HC - task 1
-        {
-			// LED_U1 = 0x01u;	// HC - task 1
-			LED_P = 0x01u;		// HC - task 3
-			PIT_StartTimer(1u);	// HC - task 3
-			PIT_StartTimer(2u);
-			PIT_StartTimer(3u);
-        }
-		else if (crfp.SID == 0x10u)		// HC - task 3
+void can_receive(CANRxFrame crfp)
+{
+	LED_Rx = !LED_Rx;
+	if (crfp.IDE == CAN_IDE_STD) // a standard message frame has been received
+	{
+		/* TO-DO: your task implementations ******************************/
+		if (crfp.SID == 0x11)
 		{
-			PIT_StopTimer(1u);			// HC - task 3
-			PIT_StopTimer(2u);
-			PIT_StopTimer(3u);
-			LED_P = 0x00u;				// HC - task 3
-			LED_U1 = 0x00u;				// HC - task 3
-			LED_U3 = 0x00u;				// HC - task 3
-			LED_Tx = 0x00u;
-		}
-		else
-		{
-			/* Do nothing */
-		}
-    }
-}
+			LED_U1 = !LED_U1;
 
+			if (!engine_running)
+			{
+				rpm = 8000;
+				rpm_step = -250;
+				engine_running = true;
+
+				PIT_ConfigureTimer(1, 1000);
+				PIT_StartTimer(1);
+
+				blink_on = true;
+
+				PIT_ConfigureTimer(3, 500);
+				PIT_StartTimer(3);
+			}
+
+			LED_P = 1;
+		}
+		else if (crfp.SID == 0x10)
+		{
+			LED_P = 0;
+			engine_running = false;
+			PIT_StopTimer(1);
+
+			PIT_StopTimer(3);
+			blink_on = false;
+
+			LED_U1 = 0;
+			LED_U3 = 0;
+		}
+	}
+}
 
 /*
  * @brief	PIT timer channel 1 IRQ callback
@@ -157,15 +167,25 @@ void can_receive(CANRxFrame crfp) {
  * @param	void
  * @retval	void
  */
-void PIT_Channel_1(void){
+void PIT_Channel_1(void)
+{
 	/* TO-DO: your task implementations **************************************/
-	LED_Tx = !LED_Tx;
-	can_send_engine_on();			// HC - task 2, 3
-	can_send_speed(pot_val);		// HC - task 3
-	can_send_rpm();
-	can_send_lights();
-}
+	PIT.CHANNEL[1].TFLG.R = 1U;
 
+	if (engine_running)
+	{
+		rpm += rpm_step;
+
+		if (rpm == 0)
+		{
+			rpm_step = 250;
+		}
+		else if (rpm == 8000)
+		{
+			rpm_step = -250;
+		}
+	}
+}
 
 /*
  * @brief	PIT timer channel 2 IRQ callback
@@ -173,24 +193,20 @@ void PIT_Channel_1(void){
  * @param	void
  * @retval	void
  */
-void PIT_Channel_2(void){
+void PIT_Channel_2(void)
+{
 	/* TO-DO: your task implementations **************************************/
+	PIT.CHANNEL[2].TFLG.R = 1U; /* Acknowledge the timer event */
+	if (engine_running)
+	{
+		speed = (POT * 240) / 4095;
 
-	if ((rpm == 0) && (rpm_dir == -1))
-	{
-		rpm_dir = 1;
+		can_send_engine_on();
+		can_send_speed(speed);
+		can_send_rpm(rpm);
+		can_send_lights();
 	}
-	else if ((rpm == 8000) && (rpm_dir == 1))
-	{
-		rpm_dir = -1;
-	}
-	else
-	{
-		/* Do nothing */
-	}
-	rpm += (rpm_dir * 250u);
 }
-
 
 /*
  * @brief	PIT timer channel 3 IRQ callback
@@ -198,31 +214,13 @@ void PIT_Channel_2(void){
  * @param	void
  * @retval	void
  */
-void PIT_Channel_3(void){
+void PIT_Channel_3(void)
+{
 	/* TO-DO: your task implementations **************************************/
+	PIT.CHANNEL[3].TFLG.R = 1U;
 
-	if (SW1 && SW2)
+	if (engine_running)
 	{
-		LED_U1 = !LED_U1;
-		LED_U3 = LED_U1;
-		light_val = 0x03u;
-	}
-	else if (SW1 && !SW2)
-	{
-		LED_U3 = !LED_U3;
-		LED_U1 = 0x00u;
-		light_val = 0x02u;
-	}
-	else if (!SW1 && SW2)
-	{
-		LED_U1 = !LED_U1;
-		LED_U3 = 0x00u;
-		light_val = 0x01u;
-	}
-	else
-	{
-		LED_U1 = 0x00u;
-		LED_U3 = 0x00u;
-		light_val = 0x00u;
+		blink_on = !blink_on;
 	}
 }

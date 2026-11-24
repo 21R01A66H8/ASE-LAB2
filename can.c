@@ -16,43 +16,52 @@
  * @param	void
  * @retval	void
  */
-void CAN_Init(void){
+void CAN_Init(void)
+{
 	can_lld_start(&CAND1, &can_config_cfg0);
 
+	/* Buffer 8: Engine On */
+	CAN_0.BUF[8].MSG_CS.R = 0;
+	CAN_0.BUF[8].MSG_ID.R = 0;
 
-	/* TO-DO: pre-configure message buffer(s) for sending here ***********************/
+	CAN_0.BUF[8].MSG_CS.B.CODE = 0x8;
+	CAN_0.BUF[8].MSG_CS.B.IDE = 1;	  /* Extended */
+	CAN_0.BUF[8].MSG_CS.B.SRR = 1;	  /* Required for extended */
+	CAN_0.BUF[8].MSG_CS.B.RTR = 0;	  /* Data frame */
+	CAN_0.BUF[8].MSG_CS.B.LENGTH = 0; /* No payload */
+	CAN_0.BUF[8].MSG_ID.B.EXT_ID = 0xDA0;
 
-	/* Engine On */
-	CAN_0.BUF[10u].MSG_CS.B.IDE = 0x01u;		/* Message/frame format: 1 = Extended, 0 = Standard/Base */		// HC - task 2, 3
-	CAN_0.BUF[10u].MSG_ID.B.STD_ID = 0x00u;		/* Message ID for standard frame */								// HC - task 2, 3
-	CAN_0.BUF[10u].MSG_ID.B.EXT_ID = 0xDA0u;	/* Message ID for extended frame*/								// HC - task 2, 3
-	CAN_0.BUF[10u].MSG_CS.B.RTR = 0x00u;		/* Remote Transmission Request; 0 = Data Frame */				// HC - task 2, 3
-	CAN_0.BUF[10u].CS.B.LENGTH = 0x00u;			/* Length of Payload, 0 - 8*/									// HC - task 2, 3
+	/* Buffer 9: Speed */
+	CAN_0.BUF[9].MSG_CS.R = 0;
+	CAN_0.BUF[9].MSG_ID.R = 0;
 
-	/* Vehicle Speed */
-	CAN_0.BUF[11u].MSG_CS.B.IDE = 0x01u;		/* Message/frame format: 1 = Extended, 0 = Standard/Base */		// HC - task 3
-	CAN_0.BUF[11u].MSG_ID.B.STD_ID = 0x00u;		/* Message ID for standard frame */								// HC - task 3
-	CAN_0.BUF[11u].MSG_ID.B.EXT_ID = 0x5A0u;	/* Message ID for extended frame*/								// HC - task 3
-	CAN_0.BUF[11u].MSG_CS.B.RTR = 0x00u;		/* Remote Transmission Request; 0 = Data Frame */				// HC - task 3
-	CAN_0.BUF[11u].CS.B.LENGTH = 0x01u;			/* Length of Payload, 0 - 8*/									// HC - task 3
+	CAN_0.BUF[9].MSG_CS.B.CODE = 0x8;
+	CAN_0.BUF[9].MSG_CS.B.IDE = 0; /* Standard */
+	CAN_0.BUF[9].MSG_CS.B.SRR = 0;
+	CAN_0.BUF[9].MSG_CS.B.RTR = 0;	  /* Data frame */
+	CAN_0.BUF[9].MSG_CS.B.LENGTH = 1; /* One payload byte */
+	CAN_0.BUF[9].MSG_ID.B.STD_ID = 0x5A0;
 
-	/* Engine RPM */
-	CAN_0.BUF[12u].MSG_CS.B.IDE = 0x01u;		/* Message/frame format: 1 = Extended, 0 = Standard/Base */		// HC - task 3
-	CAN_0.BUF[12u].MSG_ID.B.STD_ID = 0x00u;		/* Message ID for standard frame */								// HC - task 3
-	CAN_0.BUF[12u].MSG_ID.B.EXT_ID = 0x280u;	/* Message ID for extended frame*/								// HC - task 3
-	CAN_0.BUF[12u].MSG_CS.B.RTR = 0x00u;		/* Remote Transmission Request; 0 = Data Frame */				// HC - task 3
-	CAN_0.BUF[12u].CS.B.LENGTH = 0x02u;			/* Length of Payload, 0 - 8*/									// HC - task 3
+	CAN_0.BUF[10].MSG_CS.R = 0;
+	CAN_0.BUF[10].MSG_ID.R = 0;
 
-	/* Lights */
-	CAN_0.BUF[13u].MSG_CS.B.IDE = 0x01u;		/* Message/frame format: 1 = Extended, 0 = Standard/Base */		// HC - task 3
-	CAN_0.BUF[13u].MSG_ID.B.STD_ID = 0x00u;		/* Message ID for standard frame */								// HC - task 3
-	CAN_0.BUF[13u].MSG_ID.B.EXT_ID = 0x470u;	/* Message ID for extended frame*/								// HC - task 3
-	CAN_0.BUF[13u].MSG_CS.B.RTR = 0x00u;		/* Remote Transmission Request; 0 = Data Frame */				// HC - task 3
-	CAN_0.BUF[13u].CS.B.LENGTH = 0x01u;			/* Length of Payload, 0 - 8*/									// HC - task 3
+	CAN_0.BUF[10].MSG_CS.B.CODE = 0x8;
+	CAN_0.BUF[10].MSG_CS.B.IDE = 0; /* Standard */
+	CAN_0.BUF[10].MSG_CS.B.SRR = 0;
+	CAN_0.BUF[10].MSG_CS.B.RTR = 0;	  /* Data frame */
+	CAN_0.BUF[10].MSG_CS.B.LENGTH = 2; /* Two payload byte */
+	CAN_0.BUF[10].MSG_ID.B.STD_ID = 0x280;
 
-	/*************************************************************************/
+	CAN_0.BUF[11].MSG_CS.R = 0;
+	CAN_0.BUF[11].MSG_ID.R = 0;
+
+	CAN_0.BUF[11].MSG_CS.B.CODE = 0x8;
+	CAN_0.BUF[11].MSG_CS.B.IDE = 0; /* Standard */
+	CAN_0.BUF[11].MSG_CS.B.SRR = 0;
+	CAN_0.BUF[11].MSG_CS.B.RTR = 0;	  /* Data frame */
+	CAN_0.BUF[11].MSG_CS.B.LENGTH = 1; /* One payload byte */
+	CAN_0.BUF[11].MSG_ID.B.STD_ID = 0x470;
 }
-
 
 /*
  * @brief	CAN message transmit function
@@ -61,6 +70,7 @@ void CAN_Init(void){
  * @param	canmbx_t	mbx
  * @retval	void
  */
-void CAN_TxMessage(CANTxFrame txMsg, canmbx_t mbx){
+void CAN_TxMessage(CANTxFrame txMsg, canmbx_t mbx)
+{
 	// nop
 }

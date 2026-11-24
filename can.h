@@ -17,8 +17,8 @@
 /* TO-DO: your task implementations ******************************************/
 
 /* Macro definitions *********************************************************/
-#define	CAN_MASK_REGISTER			0x0FEu // 0 -> ignore all bits (i.e. accept all messages)   // HC - task 1
-#define	CAN_ACCEPTANCE_REGISTER  	0x010u  // HC - task 1
+#define	CAN_MASK_REGISTER			0x7FEU // 0 -> ignore all bits (i.e. accept all messages)
+#define	CAN_ACCEPTANCE_REGISTER  	0x010U
 
 
 /*****************************************************************************/
